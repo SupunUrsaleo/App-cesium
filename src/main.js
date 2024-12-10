@@ -2,7 +2,7 @@
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 
 // Import Cesium modules
-import { Viewer, Terrain, Transforms, Matrix4, Cartesian3, createWorldTerrainAsync, IonImageryProvider, Cesium3DTileset, Math as CesiumMath, Ion } from 'cesium';
+import { Viewer, Terrain, Transforms, defined, Matrix4, ScreenSpaceEventHandler, ScreenSpaceEventType, Cartesian3, createWorldTerrainAsync, IonImageryProvider, Cesium3DTileset, Cesium3DTileFeature, Math as CesiumMath, Ion } from 'cesium';
 
 // Set the base URL for Cesium’s static assets
 window.CESIUM_BASE_URL = './Cesium';
@@ -11,74 +11,129 @@ Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZTRmM
 // Initialize the viewer with terrain
 const viewer = new Viewer('cesiumContainer', {
   terrainProvider: await createWorldTerrainAsync(),
+  infoBox: true,
   // shadows: true,
 });
 
-// Add global imagery
-// viewer.imageryLayers.addImageryProvider(createWorldImagery());
-// Ensure globe is visible
+// Enable global imagery and terrain
 viewer.scene.globe.show = true;
 viewer.scene.skyBox.show = true;
 viewer.scene.skyAtmosphere.show = true;
-
-// viewer.camera.setView({
-//   destination: Cartesian3.fromRadians(
-//     1.7517704227,
-//     12.3090332001,
-//     290,
-//   ),
-//   orientation: {
-//     heading: -1.3,
-//     pitch: -0.6,
-//     roll: 0,
-//   },
-//   // endTransform: Matrix4.IDENTITY,
-// });
-
-// Add base imagery if needed
-// viewer.imageryLayers.addImageryProvider(new IonImageryProvider({ assetId: 2 }));
-// viewer.scene.camera.lookAtTransform(Matrix4.IDENTITY);
-// Optionally disable default navigation controls if you want full custom control
+// Enable free mouse navigation (Army-style rotation)
+// Disable Cesium's default mouse navigation
 viewer.scene.screenSpaceCameraController.enableRotate = false;
-viewer.scene.screenSpaceCameraController.enableZoom = false;
 viewer.scene.screenSpaceCameraController.enableTilt = false;
 viewer.scene.screenSpaceCameraController.enableLook = false;
+viewer.scene.screenSpaceCameraController.enableZoom = false;
+
+// Variables to track mouse state
+let isRightMouseDown = false;
+let lastMouseX = 0;
+let lastMouseY = 0;
+const rotateSpeed = CesiumMath.toRadians(0.2); // Adjust rotation speed
+
+// Prevent the context menu from appearing on right-click
+viewer.canvas.addEventListener('contextmenu', (event) => {
+  event.preventDefault();
+});
+
+// Track when the right mouse button is pressed
+viewer.canvas.addEventListener('mousedown', (event) => {
+  if (event.button === 2) { // Right mouse button
+    isRightMouseDown = true;
+    lastMouseX = event.clientX;
+    lastMouseY = event.clientY;
+  }
+});
+
+// Track when the right mouse button is released
+viewer.canvas.addEventListener('mouseup', (event) => {
+  if (event.button === 2) { // Right mouse button
+    isRightMouseDown = false;
+  }
+});
+
+// Rotate the camera based on mouse movement
+viewer.canvas.addEventListener('mousemove', (event) => {
+  if (!isRightMouseDown) return; // Only rotate when the right mouse button is pressed
+
+  const camera = viewer.scene.camera;
+
+  // Calculate mouse movement deltas
+  const deltaX = event.movementX || event.clientX - lastMouseX;
+  const deltaY = event.movementY || event.clientY - lastMouseY;
+
+  // Horizontal movement: Rotate left or right
+  camera.lookRight(rotateSpeed * deltaX);
+
+  // Vertical movement: Rotate up or down
+  camera.lookUp(rotateSpeed * deltaY);
+
+  // Update last mouse position
+  lastMouseX = event.clientX;
+  lastMouseY = event.clientY;
+});
+
+
+
+
+const handler = new ScreenSpaceEventHandler(viewer.canvas);
+
+handler.setInputAction((click) => {
+  const pickedObject = viewer.scene.pick(click.position);
+  if (defined(pickedObject)) {
+    // Check if it's a 3D tile feature
+    if (pickedObject instanceof Cesium3DTileFeature) {
+      // Create a basic entity object for the InfoBox
+      viewer.selectedEntity = {
+        name: "Selected Feature",
+        description: `
+          <p>Properties of this feature:</p>
+          <pre>${JSON.stringify(pickedObject.getPropertyNames().map(name => ({[name]: pickedObject.getProperty(name)})), null, 2)}</pre>
+        `
+      };
+    }
+  } else {
+    // Clear selection if we didn't pick anything
+    viewer.selectedEntity = undefined;
+  }
+}, ScreenSpaceEventType.LEFT_CLICK);
 
 // Add custom keyboard navigation
 document.addEventListener('keydown', (event) => {
   const camera = viewer.scene.camera;
-  const moveRate = 10.0; // Distance to move per key press
-  const rotateRate = CesiumMath.toRadians(1.0); // Angle to rotate per key press
+  const moveRate = 5.0; // Movement speed
+  const rotateRate = CesiumMath.toRadians(5.0); // Rotation speed
 
   switch (event.key) {
-    case 'w':
+    case 'w': // Move forward
       camera.moveForward(moveRate);
       break;
-    case 's':
+    case 's': // Move backward
       camera.moveBackward(moveRate);
       break;
-    case 'a':
+    case 'a': // Strafe left
       camera.moveLeft(moveRate);
       break;
-    case 'd':
+    case 'd': // Strafe right
       camera.moveRight(moveRate);
       break;
-    case 'q':
+    case 'q': // Move down
       camera.moveDown(moveRate);
       break;
-    case 'e':
+    case 'e': // Move up
       camera.moveUp(moveRate);
       break;
-    case 'ArrowUp':
+    case 'ArrowUp': // Look up
       camera.lookUp(rotateRate);
       break;
-    case 'ArrowDown':
+    case 'ArrowDown': // Look down
       camera.lookDown(rotateRate);
       break;
-    case 'ArrowLeft':
+    case 'ArrowLeft': // Look left
       camera.lookLeft(rotateRate);
       break;
-    case 'ArrowRight':
+    case 'ArrowRight': // Look right
       camera.lookRight(rotateRate);
       break;
     default:
