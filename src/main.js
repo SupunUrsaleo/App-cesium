@@ -63,6 +63,12 @@ document.addEventListener('keydown', (event) => {
     case 'd':
       camera.moveRight(moveRate);
       break;
+    case 'q':
+      camera.moveDown(moveRate);
+      break;
+    case 'e':
+      camera.moveUp(moveRate);
+      break;
     case 'ArrowUp':
       camera.lookUp(rotateRate);
       break;
