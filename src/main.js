@@ -4,6 +4,7 @@ import 'cesium/Build/Cesium/Widgets/widgets.css';
 // Import Cesium modules
 import { Viewer, Terrain, Transforms, Matrix4, Cartesian3, createWorldTerrainAsync, IonImageryProvider, Cesium3DTileset, Math as CesiumMath, Ion } from 'cesium';
 
+// Set the base URL for Cesium’s static assets
 window.CESIUM_BASE_URL = './Cesium';
 Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZTRmMDZhNS1jMTVmLTQxMTYtOGMwNi04NDAxMmJmOTZiYmEiLCJpZCI6MjQ0NTE5LCJpYXQiOjE3Mjc0MjgxMjJ9.JWqnRd89lZ2rwUKF44-bgZLvqRNDfHBPGEaNdKoEBB0';
 
@@ -16,7 +17,7 @@ const viewer = new Viewer('cesiumContainer', {
 // Add global imagery
 // viewer.imageryLayers.addImageryProvider(createWorldImagery());
 // Ensure globe is visible
-viewer.scene.globe.show = false;
+viewer.scene.globe.show = true;
 viewer.scene.skyBox.show = true;
 viewer.scene.skyAtmosphere.show = true;
 
@@ -37,6 +38,47 @@ viewer.scene.skyAtmosphere.show = true;
 // Add base imagery if needed
 // viewer.imageryLayers.addImageryProvider(new IonImageryProvider({ assetId: 2 }));
 // viewer.scene.camera.lookAtTransform(Matrix4.IDENTITY);
+// Optionally disable default navigation controls if you want full custom control
+viewer.scene.screenSpaceCameraController.enableRotate = false;
+viewer.scene.screenSpaceCameraController.enableZoom = false;
+viewer.scene.screenSpaceCameraController.enableTilt = false;
+viewer.scene.screenSpaceCameraController.enableLook = false;
+
+// Add custom keyboard navigation
+document.addEventListener('keydown', (event) => {
+  const camera = viewer.scene.camera;
+  const moveRate = 10.0; // Distance to move per key press
+  const rotateRate = CesiumMath.toRadians(1.0); // Angle to rotate per key press
+
+  switch (event.key) {
+    case 'w':
+      camera.moveForward(moveRate);
+      break;
+    case 's':
+      camera.moveBackward(moveRate);
+      break;
+    case 'a':
+      camera.moveLeft(moveRate);
+      break;
+    case 'd':
+      camera.moveRight(moveRate);
+      break;
+    case 'ArrowUp':
+      camera.lookUp(rotateRate);
+      break;
+    case 'ArrowDown':
+      camera.lookDown(rotateRate);
+      break;
+    case 'ArrowLeft':
+      camera.lookLeft(rotateRate);
+      break;
+    case 'ArrowRight':
+      camera.lookRight(rotateRate);
+      break;
+    default:
+      break;
+  }
+});
 
 (async function() {
   try {
