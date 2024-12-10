@@ -11,11 +11,9 @@ Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZTRmM
 // Initialize the viewer with terrain
 const viewer = new Viewer('cesiumContainer', {
   terrainProvider: await createWorldTerrainAsync(),
-  // shadows: true,
+  infoBox: true,
 });
 
-// Add global imagery
-// viewer.imageryLayers.addImageryProvider(createWorldImagery());
 // Ensure globe is visible
 viewer.scene.globe.show = true;
 viewer.scene.skyBox.show = true;
@@ -86,29 +84,35 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
-(async function() {
+// Array of asset IDs to load
+const assetIds = [2915556, 2917237]; // Replace with your actual asset IDs
+
+(async function loadTilesets() {
   try {
-    const assetId = 2915556;
-    const tileset = await Cesium3DTileset.fromIonAssetId(assetId, {
-      enableCollision: true,
-    });
-    viewer.scene.primitives.add(tileset);
+    for (const assetId of assetIds) {
+      const tileset = await Cesium3DTileset.fromIonAssetId(assetId, {
+        enableCollision: true, // Optional property
+      });
 
-    // const center = tileset.boundingSphere.center;
-    // viewer.scene.camera.lookAtTransform(Transforms.eastNorthUpToFixedFrame(center));
+      viewer.scene.primitives.add(tileset);
 
-    await tileset.readyPromise;
+      await tileset.readyPromise;
 
-    // Adjust camera to show tileset and some horizon
-    viewer.scene.camera.flyTo({
-      destination: tileset.boundingSphere.center,
-      orientation: {
-        heading: CesiumMath.toRadians(0),
-        pitch: CesiumMath.toRadians(-30),
-        roll: 0
+      console.log(`Tileset ${assetId} loaded successfully.`);
+
+      // Optionally fly to the first tileset
+      if (assetId === assetIds[0]) {
+        viewer.scene.camera.flyTo({
+          destination: tileset.boundingSphere.center,
+          orientation: {
+            heading: CesiumMath.toRadians(0),
+            pitch: CesiumMath.toRadians(-30),
+            roll: 0,
+          },
+        });
       }
-    });
+    }
   } catch (error) {
-    console.error('Error loading tileset from Cesium ion:', error);
+    console.error('Error loading tilesets:', error);
   }
 })();
