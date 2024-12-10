@@ -39,10 +39,10 @@ viewer.scene.skyAtmosphere.show = true;
 // viewer.imageryLayers.addImageryProvider(new IonImageryProvider({ assetId: 2 }));
 // viewer.scene.camera.lookAtTransform(Matrix4.IDENTITY);
 // Optionally disable default navigation controls if you want full custom control
-viewer.scene.screenSpaceCameraController.enableRotate = false;
-viewer.scene.screenSpaceCameraController.enableZoom = false;
-viewer.scene.screenSpaceCameraController.enableTilt = false;
-viewer.scene.screenSpaceCameraController.enableLook = false;
+viewer.scene.screenSpaceCameraController.enableRotate = true;
+viewer.scene.screenSpaceCameraController.enableZoom = true;
+viewer.scene.screenSpaceCameraController.enableTilt = true;
+viewer.scene.screenSpaceCameraController.enableLook = true;
 
 // Add custom keyboard navigation
 document.addEventListener('keydown', (event) => {
