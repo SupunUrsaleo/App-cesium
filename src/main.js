@@ -20,19 +20,19 @@ viewer.scene.globe.show = false;
 viewer.scene.skyBox.show = true;
 viewer.scene.skyAtmosphere.show = true;
 
-viewer.camera.setView({
-  destination: Cartesian3.fromRadians(
-    -1.3193669086512454,
-    0.698810888305128,
-    220,
-  ),
-  orientation: {
-    heading: -1.3,
-    pitch: -0.6,
-    roll: 0,
-  },
-  // endTransform: Matrix4.IDENTITY,
-});
+// viewer.camera.setView({
+//   destination: Cartesian3.fromRadians(
+//     1.7517704227,
+//     12.3090332001,
+//     290,
+//   ),
+//   orientation: {
+//     heading: -1.3,
+//     pitch: -0.6,
+//     roll: 0,
+//   },
+//   // endTransform: Matrix4.IDENTITY,
+// });
 
 // Add base imagery if needed
 // viewer.imageryLayers.addImageryProvider(new IonImageryProvider({ assetId: 2 }));
@@ -40,7 +40,7 @@ viewer.camera.setView({
 
 (async function() {
   try {
-    const assetId = 2749165;
+    const assetId = 2915556;
     const tileset = await Cesium3DTileset.fromIonAssetId(assetId, {
       enableCollision: true,
     });
@@ -52,14 +52,14 @@ viewer.camera.setView({
     await tileset.readyPromise;
 
     // Adjust camera to show tileset and some horizon
-    // viewer.scene.camera.flyTo({
-    //   destination: tileset.boundingSphere.center,
-    //   orientation: {
-    //     heading: CesiumMath.toRadians(0),
-    //     pitch: CesiumMath.toRadians(-30),
-    //     roll: 0
-    //   }
-    // });
+    viewer.scene.camera.flyTo({
+      destination: tileset.boundingSphere.center,
+      orientation: {
+        heading: CesiumMath.toRadians(0),
+        pitch: CesiumMath.toRadians(-30),
+        roll: 0
+      }
+    });
   } catch (error) {
     console.error('Error loading tileset from Cesium ion:', error);
   }
