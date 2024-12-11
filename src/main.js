@@ -289,7 +289,7 @@ saveWaypointButton.addEventListener('click', () => {
   let screenshot = null;
   viewer.scene.postRender.addEventListener(function captureScreenshot() {
     // Capture the canvas after the scene is rendered
-    screenshot = viewer.scene.canvas.toDataURL('image/png');
+    screenshot = viewer.scene.canvas.toDataURL('image/jpeg', 0.5);
     viewer.scene.postRender.removeEventListener(captureScreenshot); // Remove the listener after capture
   });
 
