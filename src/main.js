@@ -21,6 +21,7 @@ import {
   HorizontalOrigin,
   Cartographic,
   SceneTransforms,
+  Matrix4,
 } from 'cesium';
 
 // Set the base URL for Cesium’s static assets
@@ -455,4 +456,4 @@ function addPositionShowingFeature() {
 }
 
 // Call the function to add the feature
-addPositionShowingFeature();
+// addPositionShowingFeature();
