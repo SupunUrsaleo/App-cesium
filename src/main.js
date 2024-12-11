@@ -2,7 +2,7 @@
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 
 // Import Cesium modules
-import { Viewer, Terrain, Transforms, Matrix4, Cartesian3, createWorldTerrainAsync, IonImageryProvider, Cesium3DTileset, Math as CesiumMath, Ion } from 'cesium';
+import { Viewer, Terrain, Transforms, Matrix4, defined, UniformType, Cesium3DTileFeature, ScreenSpaceEventHandler, ScreenSpaceEventType, Cartesian3, CustomShader, LightingModel, createWorldTerrainAsync, IonImageryProvider, Cesium3DTileset, Math as CesiumMath, Ion } from 'cesium';
 
 // Set the base URL for Cesium’s static assets
 window.CESIUM_BASE_URL = './Cesium';
@@ -19,23 +19,6 @@ viewer.scene.globe.show = true;
 viewer.scene.skyBox.show = true;
 viewer.scene.skyAtmosphere.show = true;
 
-// viewer.camera.setView({
-//   destination: Cartesian3.fromRadians(
-//     1.7517704227,
-//     12.3090332001,
-//     290,
-//   ),
-//   orientation: {
-//     heading: -1.3,
-//     pitch: -0.6,
-//     roll: 0,
-//   },
-//   // endTransform: Matrix4.IDENTITY,
-// });
-
-// Add base imagery if needed
-// viewer.imageryLayers.addImageryProvider(new IonImageryProvider({ assetId: 2 }));
-// viewer.scene.camera.lookAtTransform(Matrix4.IDENTITY);
 // Optionally disable default navigation controls if you want full custom control
 viewer.scene.screenSpaceCameraController.enableRotate = true;
 viewer.scene.screenSpaceCameraController.enableZoom = true;
@@ -84,6 +67,40 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
+// const customShader = new CustomShader({
+//   lightingModel: LightingModel.PBR, // Use PBR for realistic materials or UNLIT for simple shading
+//   fragmentShaderText: `
+//     void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+//       material.diffuse = vec3(1.0, 0.5, 0.0); // Orange diffuse color
+//       material.specular = vec3(0.8); // Reflective highlights
+//       material.roughness = 0.2; // Smooth surface
+//     }
+//   `,
+// });
+
+// const basicShader = new CustomShader({
+//   fragmentShaderText: `
+//     void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+//       material.diffuse = vec3(1.0, 0.0, 0.0); // Red color
+//     }
+//   `,
+// });
+
+const globalShader = new CustomShader({
+  fragmentShaderText: `
+    void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+      material.diffuse = vec3(0.0, 0.5, 1.0); // Apply blue color
+      material.emissive = vec3(0.2, 0.2, 0.2); // Add a subtle glow effect
+      material.alpha = 0.8; // Slightly translucent
+    }
+  `,
+});
+
+
+
+
+
+
 // Array of asset IDs to load
 const assetIds = [2915556]; // Replace with your actual asset IDs
 
@@ -91,16 +108,20 @@ const assetIds = [2915556]; // Replace with your actual asset IDs
   try {
     for (const assetId of assetIds) {
       const tileset = await Cesium3DTileset.fromIonAssetId(assetId, {
-        enableCollision: true, // Optional property
+        enableCollision: true,
       });
-
+      
       viewer.scene.primitives.add(tileset);
 
+      
       await tileset.readyPromise;
-
+      
       console.log(`Tileset ${assetId} loaded successfully.`);
-
-      // Optionally fly to the first tileset
+      // Apply the shader to the tileset
+      tileset.customShader = globalShader;
+      console.log(tileset.featureIdLabel); // Verify the feature ID label
+      console.log(tileset.metadata); // Verify tileset metadata
+    
       if (assetId === assetIds[0]) {
         viewer.scene.camera.flyTo({
           destination: tileset.boundingSphere.center,
@@ -111,8 +132,30 @@ const assetIds = [2915556]; // Replace with your actual asset IDs
           },
         });
       }
-    }
+    }    
   } catch (error) {
     console.error('Error loading tilesets:', error);
   }
 })();
+
+// const handler = new ScreenSpaceEventHandler(viewer.scene.canvas);
+// handler.setInputAction(function (movement) {
+//   const pickedObject = viewer.scene.pick(movement.position);
+
+//   if (defined(pickedObject) && pickedObject instanceof Cesium3DTileFeature) {
+//     // Retrieve a property from the picked feature
+//     const selectedComponent = pickedObject.getProperty("component");
+
+//     console.log("Selected Component:", selectedComponent);
+
+//     // Update the shader's uniform with the property value
+//     propertyShader.setUniform("u_selectedComponent", selectedComponent);
+//   } else {
+//     // Reset the uniform if no feature is selected
+//     propertyShader.setUniform("u_selectedComponent", -1);
+//   }
+// }, ScreenSpaceEventType.LEFT_CLICK);
+
+
+
+
