@@ -175,6 +175,7 @@ function loadWaypoints() {
   return [];
 }
 
+
 // Load waypoints from localStorage
 const waypoints = loadWaypoints();
 
@@ -220,10 +221,12 @@ function saveWaypointsToLocalStorage() {
         latitude: Math.toDegrees(cartographic.latitude),
         height: cartographic.height,
       },
+      orientation: waypoint.orientation, // Save orientation (heading, pitch, roll)
     };
   });
   localStorage.setItem('waypoints', JSON.stringify(simplifiedWaypoints));
 }
+
 
 // Click handler to navigate to waypoints
 function addWaypointClickHandler() {
@@ -234,35 +237,26 @@ function addWaypointClickHandler() {
     if (defined(pickedObject) && defined(pickedObject.id)) {
       const waypoint = waypoints.find((wp) => wp.id === pickedObject.id.id);
       if (waypoint && waypoint.position) {
-        try {
-          // Ensure the position is valid
-          const cartographic = Cartographic.fromCartesian(waypoint.position);
-          if (!cartographic) {
-            throw new Error(`Invalid cartographic position for waypoint ${waypoint.id}`);
-          }
-
-          const height = cartographic.height || 300; // Default height if undefined
-          const destination = Cartesian3.fromRadians(
+        const cartographic = Cartographic.fromCartesian(waypoint.position);
+        const height = cartographic.height || 300;
+  
+        viewer.camera.flyTo({
+          destination: Cartesian3.fromRadians(
             cartographic.longitude,
             cartographic.latitude,
             height
-          );
-
-          viewer.camera.flyTo({
-            destination,
-            orientation: {
-              heading: Math.toRadians(0),
-              pitch: Math.toRadians(-30),
-              roll: 0,
-            },
-            duration: 0,
-          });
-        } catch (error) {
-          console.error(`Error navigating to waypoint ${waypoint.id}:`, error);
-        }
+          ),
+          orientation: {
+            heading: waypoint.orientation.heading,
+            pitch: waypoint.orientation.pitch,
+            roll: waypoint.orientation.roll,
+          },
+          duration: 0,
+        });
       }
     }
   }, ScreenSpaceEventType.LEFT_CLICK);
+  
 }
 
 // Add Save Waypoint Button functionality
@@ -273,31 +267,38 @@ const saveWaypointButton = document.getElementById('saveWaypointButton');
 
 // Function to save current camera position as a waypoint
 saveWaypointButton.addEventListener('click', () => {
-  const cameraPosition = viewer.scene.camera.position;
-  const cartographic = Cartographic.fromCartesian(cameraPosition);
-  
-  const latitude = Math.toDegrees(cartographic.latitude)
-  const longitude = Math.toDegrees(cartographic.longitude)
-  const height = cartographic.height
+  const camera = viewer.scene.camera;
+  const cartographic = Cartographic.fromCartesian(camera.position);
 
-  // Create a unique waypoint ID
+  const latitude = Math.toDegrees(cartographic.latitude);
+  const longitude = Math.toDegrees(cartographic.longitude);
+  const height = cartographic.height;
+
+  const heading = camera.heading; // Get the camera's current heading
+  const pitch = camera.pitch; // Get the camera's current pitch
+  const roll = camera.roll; // Get the camera's current roll
+
   const waypointId = `waypoint${waypoints.length + 1}`;
 
-  // Add the new waypoint to the list
   const newWaypoint = {
     id: waypointId,
     name: `Waypoint ${waypoints.length + 1}`,
     position: Cartesian3.fromDegrees(longitude, latitude, height),
+    orientation: {
+      heading,
+      pitch,
+      roll,
+    },
   };
+
   waypoints.push(newWaypoint);
 
-  // Add waypoint to the viewer
   viewer.entities.add({
     id: newWaypoint.id,
     name: newWaypoint.name,
     position: newWaypoint.position,
     billboard: {
-      image: 'delete.png', // Adjust to your waypoint icon
+      image: 'delete.png',
       width: 32,
       height: 32,
       verticalOrigin: VerticalOrigin.BOTTOM,
@@ -311,11 +312,76 @@ saveWaypointButton.addEventListener('click', () => {
       pixelOffset: new Cartesian2(0, -25),
     },
   });
+
   // Save waypoints to localStorage
   saveWaypointsToLocalStorage();
 
-  console.log(`Waypoint saved: ${newWaypoint.name} at [${latitude}, ${longitude}, ${height}]`);
+  console.log(
+    `Waypoint saved: ${newWaypoint.name} at [${latitude}, ${longitude}, ${height}] with orientation: heading=${heading}, pitch=${pitch}, roll=${roll}`
+  );
 });
+
+// Get references to the buttons and the waypoint list container
+const viewWaypointsButton = document.getElementById('viewWaypointsButton');
+const waypointsList = document.getElementById('waypointsList');
+const waypointsUl = document.getElementById('waypointsUl');
+const closeWaypointListButton = document.getElementById('closeWaypointListButton');
+
+// Show the list of waypoints when the "View Waypoints" button is clicked
+viewWaypointsButton.addEventListener('click', () => {
+  waypointsUl.innerHTML = ''; // Clear the list before populating
+
+  if (waypoints.length === 0) {
+    const noWaypointsItem = document.createElement('li');
+    noWaypointsItem.textContent = 'No waypoints saved.';
+    waypointsUl.appendChild(noWaypointsItem);
+  } else {
+    waypoints.forEach((waypoint, index) => {
+      const waypointItem = document.createElement('li');
+      waypointItem.textContent = `${index + 1}. ${waypoint.name}`;
+      waypointItem.style.cursor = 'pointer';
+      waypointItem.style.padding = '5px';
+      waypointItem.style.borderBottom = '1px solid white';
+
+      // Add click listener to fly to the waypoint
+      waypointItem.addEventListener('click', () => {
+        flyToWaypoint(waypoint);
+      });
+
+      waypointsUl.appendChild(waypointItem);
+    });
+  }
+
+  waypointsList.style.display = 'block'; // Show the list
+});
+
+// Close the list of waypoints
+closeWaypointListButton.addEventListener('click', () => {
+  waypointsList.style.display = 'none'; // Hide the list
+});
+
+function flyToWaypoint(waypoint) {
+  const cartographic = Cartographic.fromCartesian(waypoint.position);
+
+  const destination = Cartesian3.fromRadians(
+    cartographic.longitude,
+    cartographic.latitude,
+    cartographic.height
+  );
+
+  viewer.camera.flyTo({
+    destination,
+    orientation: {
+      heading: waypoint.orientation.heading,
+      pitch: waypoint.orientation.pitch,
+      roll: waypoint.orientation.roll,
+    },
+    duration: 2, // Smooth animation
+  });
+
+  // Optionally close the waypoint list after flying to a waypoint
+  waypointsList.style.display = 'none';
+}
 
 
 // Initialize waypoints and interaction

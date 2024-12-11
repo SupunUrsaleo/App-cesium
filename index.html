@@ -26,9 +26,19 @@
   </div>
   <div id="waypointsOverlay" style="position: absolute; z-index: 10; pointer-events: none;"></div>
   
-  <!-- Add Save Waypoint Button -->
+  <!-- Waypoints List -->
+  <div id="waypointsList" style="display: none; position: absolute; top: 50px; left: 10px; z-index: 10; background: rgba(0, 0, 0, 0.7); color: white; padding: 10px; border-radius: 5px; max-width: 200px; max-height: 300px; overflow-y: auto;">
+    <h4>Saved Waypoints</h4>
+    <ul id="waypointsUl" style="list-style: none; padding: 0; margin: 0;">
+      <!-- Dynamically populated -->
+    </ul>
+    <button id="closeWaypointListButton" style="margin-top: 10px; padding: 5px; font-size: 14px;">Close</button>
+  </div>
+
+  <!-- Buttons -->
   <div style="position: absolute; top: 10px; left: 10px; z-index: 10;">
     <button id="saveWaypointButton" style="padding: 10px; font-size: 14px;">Add Waypoint</button>
+    <button id="viewWaypointsButton" style="padding: 10px; font-size: 14px; margin-left: 5px;">View Waypoints</button>
   </div>
   
   <script type="module" src="./src/main.js"></script>
