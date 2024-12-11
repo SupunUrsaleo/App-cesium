@@ -176,6 +176,7 @@ function loadWaypoints() {
 }
 
 
+
 // Load waypoints from localStorage
 const waypoints = loadWaypoints();
 
@@ -221,11 +222,13 @@ function saveWaypointsToLocalStorage() {
         latitude: Math.toDegrees(cartographic.latitude),
         height: cartographic.height,
       },
-      orientation: waypoint.orientation, // Save orientation (heading, pitch, roll)
+      orientation: waypoint.orientation,
+      screenshot: waypoint.screenshot, // Save the screenshot
     };
   });
   localStorage.setItem('waypoints', JSON.stringify(simplifiedWaypoints));
 }
+
 
 
 // Click handler to navigate to waypoints
@@ -274,52 +277,68 @@ saveWaypointButton.addEventListener('click', () => {
   const longitude = Math.toDegrees(cartographic.longitude);
   const height = cartographic.height;
 
-  const heading = camera.heading; // Get the camera's current heading
-  const pitch = camera.pitch; // Get the camera's current pitch
-  const roll = camera.roll; // Get the camera's current roll
+  const heading = camera.heading;
+  const pitch = camera.pitch;
+  const roll = camera.roll;
 
   const waypointId = `waypoint${waypoints.length + 1}`;
 
-  const newWaypoint = {
-    id: waypointId,
-    name: `Waypoint ${waypoints.length + 1}`,
-    position: Cartesian3.fromDegrees(longitude, latitude, height),
-    orientation: {
-      heading,
-      pitch,
-      roll,
-    },
-  };
-
-  waypoints.push(newWaypoint);
-
-  viewer.entities.add({
-    id: newWaypoint.id,
-    name: newWaypoint.name,
-    position: newWaypoint.position,
-    billboard: {
-      image: 'delete.png',
-      width: 32,
-      height: 32,
-      verticalOrigin: VerticalOrigin.BOTTOM,
-    },
-    label: {
-      text: newWaypoint.name,
-      font: '14pt sans-serif',
-      style: LabelStyle.FILL_AND_OUTLINE,
-      outlineWidth: 2,
-      verticalOrigin: VerticalOrigin.BOTTOM,
-      pixelOffset: new Cartesian2(0, -25),
-    },
+  // Ensure the scene renders and capture the screenshot
+  let screenshot = null;
+  viewer.scene.postRender.addEventListener(function captureScreenshot() {
+    // Capture the canvas after the scene is rendered
+    screenshot = viewer.scene.canvas.toDataURL('image/png');
+    viewer.scene.postRender.removeEventListener(captureScreenshot); // Remove the listener after capture
   });
 
-  // Save waypoints to localStorage
-  saveWaypointsToLocalStorage();
+  // Wait a short time to ensure the frame renders
+  setTimeout(() => {
+    if (!screenshot) {
+      console.error('Failed to capture screenshot.');
+      return;
+    }
 
-  console.log(
-    `Waypoint saved: ${newWaypoint.name} at [${latitude}, ${longitude}, ${height}] with orientation: heading=${heading}, pitch=${pitch}, roll=${roll}`
-  );
+    const newWaypoint = {
+      id: waypointId,
+      name: `Waypoint ${waypoints.length + 1}`,
+      position: Cartesian3.fromDegrees(longitude, latitude, height),
+      orientation: { heading, pitch, roll },
+      screenshot, // Save the captured screenshot
+    };
+
+    waypoints.push(newWaypoint);
+
+    viewer.entities.add({
+      id: newWaypoint.id,
+      name: newWaypoint.name,
+      position: newWaypoint.position,
+      billboard: {
+        image: 'delete.png',
+        width: 32,
+        height: 32,
+        verticalOrigin: VerticalOrigin.BOTTOM,
+      },
+      label: {
+        text: newWaypoint.name,
+        font: '14pt sans-serif',
+        style: LabelStyle.FILL_AND_OUTLINE,
+        outlineWidth: 2,
+        verticalOrigin: VerticalOrigin.BOTTOM,
+        pixelOffset: new Cartesian2(0, -25),
+      },
+    });
+
+    // Save waypoints to localStorage
+    saveWaypointsToLocalStorage();
+
+    console.log(
+      `Waypoint saved: ${newWaypoint.name} at [${latitude}, ${longitude}, ${height}] with orientation: heading=${heading}, pitch=${pitch}, roll=${roll}`
+    );
+  }, 200); // Adjust delay if necessary
 });
+
+
+
 
 // Get references to the buttons and the waypoint list container
 const viewWaypointsButton = document.getElementById('viewWaypointsButton');
@@ -338,22 +357,39 @@ viewWaypointsButton.addEventListener('click', () => {
   } else {
     waypoints.forEach((waypoint, index) => {
       const waypointItem = document.createElement('li');
-      waypointItem.textContent = `${index + 1}. ${waypoint.name}`;
       waypointItem.style.cursor = 'pointer';
-      waypointItem.style.padding = '5px';
+      waypointItem.style.padding = '10px';
       waypointItem.style.borderBottom = '1px solid white';
+      waypointItem.style.display = 'flex';
+      waypointItem.style.alignItems = 'center';
+
+      // Add the thumbnail image
+      const thumbnail = document.createElement('img');
+      thumbnail.src = waypoint.screenshot;
+      thumbnail.alt = `Thumbnail of ${waypoint.name}`;
+      thumbnail.style.width = '50px';
+      thumbnail.style.height = '50px';
+      thumbnail.style.marginRight = '10px';
+      thumbnail.style.borderRadius = '5px';
+
+      // Add the waypoint name
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = `${index + 1}. ${waypoint.name}`;
 
       // Add click listener to fly to the waypoint
       waypointItem.addEventListener('click', () => {
         flyToWaypoint(waypoint);
       });
 
+      waypointItem.appendChild(thumbnail);
+      waypointItem.appendChild(nameSpan);
       waypointsUl.appendChild(waypointItem);
     });
   }
 
   waypointsList.style.display = 'block'; // Show the list
 });
+
 
 // Close the list of waypoints
 closeWaypointListButton.addEventListener('click', () => {
