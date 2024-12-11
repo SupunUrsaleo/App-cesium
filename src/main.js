@@ -1,5 +1,6 @@
 // Import Cesium CSS
 import 'cesium/Build/Cesium/Widgets/widgets.css';
+import { openDB } from 'idb';
 
 // Import Cesium modules
 import {
