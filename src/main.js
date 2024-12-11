@@ -2,7 +2,26 @@
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 
 // Import Cesium modules
-import { Viewer, Terrain, Transforms, Matrix4, Cartesian3, createWorldTerrainAsync, IonImageryProvider, Cesium3DTileset, Math as CesiumMath, Ion } from 'cesium';
+import {
+  Viewer,
+  createWorldTerrainAsync,
+  Cartesian3,
+  Cartesian2,
+  Math,
+  ScreenSpaceEventType,
+  ScreenSpaceEventHandler,
+  Entity,
+  Cesium3DTileset,
+  Ion,
+  defined,
+  Color,
+  Cesium3DTileFeature,
+  LabelStyle,
+  VerticalOrigin,
+  HorizontalOrigin,
+  Cartographic,
+  SceneTransforms,
+} from 'cesium';
 
 // Set the base URL for Cesium’s static assets
 window.CESIUM_BASE_URL = './Cesium';
@@ -46,7 +65,7 @@ viewer.scene.screenSpaceCameraController.enableLook = true;
 document.addEventListener('keydown', (event) => {
   const camera = viewer.scene.camera;
   const moveRate = 10.0; // Distance to move per key press
-  const rotateRate = CesiumMath.toRadians(1.0); // Angle to rotate per key press
+  const rotateRate = Math.toRadians(1.0); // Angle to rotate per key press
 
   switch (event.key) {
     case 'w':
@@ -105,8 +124,8 @@ const assetIds = [2915556]; // Replace with your actual asset IDs
         viewer.scene.camera.flyTo({
           destination: tileset.boundingSphere.center,
           orientation: {
-            heading: CesiumMath.toRadians(0),
-            pitch: CesiumMath.toRadians(-30),
+            heading: Math.toRadians(0),
+            pitch: Math.toRadians(-30),
             roll: 0,
           },
         });
@@ -116,3 +135,222 @@ const assetIds = [2915556]; // Replace with your actual asset IDs
     console.error('Error loading tilesets:', error);
   }
 })();
+
+// Reference to the waypoints overlay container
+const waypointsOverlay = document.getElementById('waypointsOverlay');
+
+// // Array of waypoints
+// const waypoints = [
+//   {
+//     id: 'waypoint1',
+//     name: 'Waypoint 1',
+//     position: Cartesian3.fromDegrees(1.7525466444, 12.3094027847, 300), // Longitude, Latitude, Height
+//   },
+//   {
+//     id: 'waypoint2',
+//     name: 'Waypoint 2',
+//     position: Cartesian3.fromDegrees(1.7525414098, 12.3096597222, 300), // Longitude, Latitude, Height
+//   },
+//   {
+//     id: 'waypoint3',
+//     name: 'Waypoint 3',
+//     position: Cartesian3.fromDegrees(1.7512540625, 12.3097457051, 300), // Longitude, Latitude, Height
+//   },
+// ];
+
+// Function to load waypoints from localStorage
+function loadWaypoints() {
+  const storedWaypoints = localStorage.getItem('waypoints');
+  if (storedWaypoints) {
+    const parsedWaypoints = JSON.parse(storedWaypoints);
+    parsedWaypoints.forEach((waypoint) => {
+      waypoint.position = Cartesian3.fromDegrees(
+        waypoint.position.longitude,
+        waypoint.position.latitude,
+        waypoint.position.height
+      );
+    });
+    return parsedWaypoints;
+  }
+  return [];
+}
+
+// Load waypoints from localStorage
+const waypoints = loadWaypoints();
+
+// Add waypoints directly as Cesium entities
+function addWaypoints() {
+  waypoints.forEach((waypoint) => {
+    if (!waypoint.position || !(waypoint.position instanceof Cartesian3)) {
+      console.error(`Invalid position for waypoint ${waypoint.id}:`, waypoint.position);
+      return; // Skip invalid waypoints
+    }
+  
+    viewer.entities.add({
+      id: waypoint.id,
+      name: waypoint.name,
+      position: waypoint.position,
+      billboard: {
+        image: 'delete.png', // Use the PNG icon
+        width: 32, // Optional: Scale the width
+        height: 32, // Optional: Scale the height
+        verticalOrigin: VerticalOrigin.BOTTOM, // Align the bottom of the icon with the position
+      },
+      label: {
+        text: waypoint.name,
+        font: '14pt sans-serif',
+        style: LabelStyle.FILL_AND_OUTLINE,
+        outlineWidth: 2,
+        verticalOrigin: VerticalOrigin.BOTTOM,
+        pixelOffset: new Cartesian2(0, -25),
+      },
+    });
+  });  
+}
+
+// Function to save waypoints to localStorage
+function saveWaypointsToLocalStorage() {
+  const simplifiedWaypoints = waypoints.map((waypoint) => {
+    const cartographic = Cartographic.fromCartesian(waypoint.position);
+    return {
+      id: waypoint.id,
+      name: waypoint.name,
+      position: {
+        longitude: Math.toDegrees(cartographic.longitude),
+        latitude: Math.toDegrees(cartographic.latitude),
+        height: cartographic.height,
+      },
+    };
+  });
+  localStorage.setItem('waypoints', JSON.stringify(simplifiedWaypoints));
+}
+
+// Click handler to navigate to waypoints
+function addWaypointClickHandler() {
+  const handler = new ScreenSpaceEventHandler(viewer.scene.canvas);
+
+  handler.setInputAction((click) => {
+    const pickedObject = viewer.scene.pick(click.position);
+    if (defined(pickedObject) && defined(pickedObject.id)) {
+      const waypoint = waypoints.find((wp) => wp.id === pickedObject.id.id);
+      if (waypoint && waypoint.position) {
+        try {
+          // Ensure the position is valid
+          const cartographic = Cartographic.fromCartesian(waypoint.position);
+          if (!cartographic) {
+            throw new Error(`Invalid cartographic position for waypoint ${waypoint.id}`);
+          }
+
+          const height = cartographic.height || 300; // Default height if undefined
+          const destination = Cartesian3.fromRadians(
+            cartographic.longitude,
+            cartographic.latitude,
+            height
+          );
+
+          viewer.camera.flyTo({
+            destination,
+            orientation: {
+              heading: Math.toRadians(0),
+              pitch: Math.toRadians(-30),
+              roll: 0,
+            },
+            duration: 0,
+          });
+        } catch (error) {
+          console.error(`Error navigating to waypoint ${waypoint.id}:`, error);
+        }
+      }
+    }
+  }, ScreenSpaceEventType.LEFT_CLICK);
+}
+
+// Add Save Waypoint Button functionality
+const saveWaypointButton = document.getElementById('saveWaypointButton');
+
+// List to store saved waypoints dynamically
+// const waypoints = [];
+
+// Function to save current camera position as a waypoint
+saveWaypointButton.addEventListener('click', () => {
+  const cameraPosition = viewer.scene.camera.position;
+  const cartographic = Cartographic.fromCartesian(cameraPosition);
+  
+  const latitude = Math.toDegrees(cartographic.latitude)
+  const longitude = Math.toDegrees(cartographic.longitude)
+  const height = cartographic.height
+
+  // Create a unique waypoint ID
+  const waypointId = `waypoint${waypoints.length + 1}`;
+
+  // Add the new waypoint to the list
+  const newWaypoint = {
+    id: waypointId,
+    name: `Waypoint ${waypoints.length + 1}`,
+    position: Cartesian3.fromDegrees(longitude, latitude, height),
+  };
+  waypoints.push(newWaypoint);
+
+  // Add waypoint to the viewer
+  viewer.entities.add({
+    id: newWaypoint.id,
+    name: newWaypoint.name,
+    position: newWaypoint.position,
+    billboard: {
+      image: 'delete.png', // Adjust to your waypoint icon
+      width: 32,
+      height: 32,
+      verticalOrigin: VerticalOrigin.BOTTOM,
+    },
+    label: {
+      text: newWaypoint.name,
+      font: '14pt sans-serif',
+      style: LabelStyle.FILL_AND_OUTLINE,
+      outlineWidth: 2,
+      verticalOrigin: VerticalOrigin.BOTTOM,
+      pixelOffset: new Cartesian2(0, -25),
+    },
+  });
+  // Save waypoints to localStorage
+  saveWaypointsToLocalStorage();
+
+  console.log(`Waypoint saved: ${newWaypoint.name} at [${latitude}, ${longitude}, ${height}]`);
+});
+
+
+// Initialize waypoints and interaction
+addWaypoints();
+addWaypointClickHandler();
+
+
+
+// Add position showing feature
+function addPositionShowingFeature() {
+  // MOUSE_MOVE event for hover effect to show latitude and longitude in HTML overlay
+  viewer.screenSpaceEventHandler.setInputAction((movement) => {
+    const cartesian = viewer.scene.pickPosition(movement.endPosition);
+    const overlay = document.getElementById('coordinatesOverlay');
+    const coordinatesText = document.getElementById('coordinatesText');
+
+    if (cartesian) {
+      const cartographic = Cartographic.fromCartesian(cartesian);
+      const longitude = Math.toDegrees(cartographic.longitude).toFixed(10);
+      const latitude = Math.toDegrees(cartographic.latitude).toFixed(10);
+      // const height = Math.toDegrees(cartographic.height).toFixed(10)
+
+      // coordinatesText.innerText = `Lat: ${latitude}°\nLon: ${longitude}°\nHeight: ${height}`;
+      coordinatesText.innerText = `Lat: ${latitude}°\nLon: ${longitude}°`;
+
+      // Update the overlay position near the mouse
+      overlay.style.left = `${movement.endPosition.x + 10}px`;
+      overlay.style.top = `${movement.endPosition.y + 10}px`;
+      overlay.style.display = 'block';  // Show the overlay
+    } else {
+      overlay.style.display = 'none';  // Hide overlay if no position is found
+    }
+
+  }, ScreenSpaceEventType.MOUSE_MOVE);
+}
+
+// Call the function to add the feature
+addPositionShowingFeature();

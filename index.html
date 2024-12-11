@@ -20,6 +20,18 @@
 </head>
 <body>
   <div id="cesiumContainer"></div>
+  <!-- mouse hover coordinate -->
+  <div id="coordinatesOverlay" style="display: none; position: absolute; z-index: 10; color: white; background: rgba(0, 0, 0, 0.6); padding: 5px; border-radius: 3px;">
+    <p id="coordinatesText" style="margin: 0;"></p>
+  </div>
+  <div id="waypointsOverlay" style="position: absolute; z-index: 10; pointer-events: none;"></div>
+  
+  <!-- Add Save Waypoint Button -->
+  <div style="position: absolute; top: 10px; left: 10px; z-index: 10;">
+    <button id="saveWaypointButton" style="padding: 10px; font-size: 14px;">Add Waypoint</button>
+  </div>
+  
   <script type="module" src="./src/main.js"></script>
 </body>
+
 </html>
