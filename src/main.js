@@ -17,13 +17,14 @@ const tileset = viewer.scene.primitives.add(
   await Cesium3DTileset.fromUrl(
     "http://172.31.11.155:8080/tileset.json",
     {
-      debugShowBoundingVolume: true,
+      debugShowBoundingVolume: false,
     }
   )
 );
 tileset.modelMatrix = Transforms.eastNorthUpToFixedFrame(
   Cartesian3.fromDegrees(-75.152325, 39.94704, 0.0)
 );
+viewer.scene.globe.cullWithChildren = true;
 
 // Create an HTML element that will serve as the
 // tooltip that displays the metadata information
