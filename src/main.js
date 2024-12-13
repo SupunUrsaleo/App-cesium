@@ -102,27 +102,21 @@ const globalShader = new CustomShader({
 
 
 // Array of asset IDs to load
-const assetIds = [2915556]; // Replace with your actual asset IDs
+// const assetIds = [2915556]; // Replace with your actual asset IDs
 
 (async function loadTilesets() {
   try {
-    for (const assetId of assetIds) {
-      const tileset = await Cesium3DTileset.fromIonAssetId(assetId, {
-        enableCollision: true,
-      });
-      
+      const tileset = await Cesium3DTileset.fromUrl('http://172.31.11.155:8080/tileset.json');
       viewer.scene.primitives.add(tileset);
-
       
       await tileset.readyPromise;
       
-      console.log(`Tileset ${assetId} loaded successfully.`);
+      console.log(`Tilesetloaded successfully.`);
       // Apply the shader to the tileset
       tileset.customShader = globalShader;
       console.log(tileset.featureIdLabel); // Verify the feature ID label
       console.log(tileset.metadata); // Verify tileset metadata
     
-      if (assetId === assetIds[0]) {
         viewer.scene.camera.flyTo({
           destination: tileset.boundingSphere.center,
           orientation: {
@@ -131,8 +125,7 @@ const assetIds = [2915556]; // Replace with your actual asset IDs
             roll: 0,
           },
         });
-      }
-    }    
+ 
   } catch (error) {
     console.error('Error loading tilesets:', error);
   }
