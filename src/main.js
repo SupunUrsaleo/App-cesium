@@ -25,7 +25,8 @@ tileset.modelMatrix = Transforms.eastNorthUpToFixedFrame(
   Cartesian3.fromDegrees(-75.152325, 39.94704, 0.0)
 );
 viewer.scene.globe.cullWithChildren = true;
-
+console.log(tileset.featureIdLabel); // Verify the feature ID label
+console.log(tileset.metadata);
 // Create an HTML element that will serve as the
 // tooltip that displays the metadata information
 function createTooltip() {
