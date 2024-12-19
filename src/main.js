@@ -21,6 +21,11 @@ const tileset = viewer.scene.primitives.add(
     }
   )
 );
+
+// const tileset = viewer.scene.primitives.add(
+//   await Cesium3DTileset.fromIonAssetId(2932246),
+// );
+
 tileset.modelMatrix = Transforms.eastNorthUpToFixedFrame(
   Cartesian3.fromDegrees(-75.152325, 39.94704, 0.0)
 );
