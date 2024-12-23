@@ -22,6 +22,48 @@ const tileset = viewer.scene.primitives.add(
   )
 );
 
+// Add custom keyboard navigation
+document.addEventListener('keydown', (event) => {
+  const camera = viewer.scene.camera;
+  const moveRate = 10.0; // Distance to move per key press
+  const rotateRate = Math.toRadians(1.0); // Angle to rotate per key press
+
+  switch (event.key) {
+    case 'w':
+      camera.moveForward(moveRate);
+      break;
+    case 's':
+      camera.moveBackward(moveRate);
+      break;
+    case 'a':
+      camera.moveLeft(moveRate);
+      break;
+    case 'd':
+      camera.moveRight(moveRate);
+      break;
+    case 'q':
+      camera.moveDown(moveRate);
+      break;
+    case 'e':
+      camera.moveUp(moveRate);
+      break;
+    case 'ArrowUp':
+      camera.lookUp(rotateRate);
+      break;
+    case 'ArrowDown':
+      camera.lookDown(rotateRate);
+      break;
+    case 'ArrowLeft':
+      camera.lookLeft(rotateRate);
+      break;
+    case 'ArrowRight':
+      camera.lookRight(rotateRate);
+      break;
+    default:
+      break;
+  }
+});
+
 // const tileset = viewer.scene.primitives.add(
 //   await Cesium3DTileset.fromIonAssetId(2932246),
 // );
