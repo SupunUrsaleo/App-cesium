@@ -9,18 +9,25 @@ window.CESIUM_BASE_URL = './Cesium';
 Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJhZTRmMDZhNS1jMTVmLTQxMTYtOGMwNi04NDAxMmJmOTZiYmEiLCJpZCI6MjQ0NTE5LCJpYXQiOjE3Mjc0MjgxMjJ9.JWqnRd89lZ2rwUKF44-bgZLvqRNDfHBPGEaNdKoEBB0';
 
 // Initialize the viewer with terrain
-const viewer = new Viewer("cesiumContainer");
+// const viewer = new Viewer("cesiumContainer");
 
-// Create the tileset, and set its model matrix to move it
-// to a certain position on the globe
-const tileset = viewer.scene.primitives.add(
-  await Cesium3DTileset.fromUrl(
-    "http://172.31.11.155:8080/tileset.json",
-    {
-      debugShowBoundingVolume: false,
-    }
-  )
-);
+// Initialize the viewer with terrain
+const viewer = new Viewer('cesiumContainer', {
+  terrainProvider: await createWorldTerrainAsync(),
+  infoBox: true,
+  // shadows: true,
+});
+
+// Enable global imagery and terrain
+viewer.scene.globe.show = false;
+viewer.scene.skyBox.show = true;
+viewer.scene.skyAtmosphere.show = true;
+// Enable free mouse navigation (Army-style rotation)
+// Disable Cesium's default mouse navigation
+viewer.scene.screenSpaceCameraController.enableRotate = true;
+viewer.scene.screenSpaceCameraController.enableTilt = true;
+viewer.scene.screenSpaceCameraController.enableLook = true;
+viewer.scene.screenSpaceCameraController.enableZoom = true;
 
 // Add custom keyboard navigation
 document.addEventListener('keydown', (event) => {
@@ -65,8 +72,19 @@ document.addEventListener('keydown', (event) => {
 });
 
 // const tileset = viewer.scene.primitives.add(
-//   await Cesium3DTileset.fromIonAssetId(2932246),
+//   await Cesium3DTileset.fromIonAssetId(2887123),
 // );
+
+// Create the tileset, and set its model matrix to move it
+// to a certain position on the globe
+const tileset = viewer.scene.primitives.add(
+  await Cesium3DTileset.fromUrl(
+    "http://172.31.11.155:8080/tileset.json",
+    {
+      debugShowBoundingVolume: false,
+    }
+  )
+);
 
 tileset.modelMatrix = Transforms.eastNorthUpToFixedFrame(
   Cartesian3.fromDegrees(-75.152325, 39.94704, 0.0)
