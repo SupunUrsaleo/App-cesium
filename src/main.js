@@ -16,32 +16,32 @@ const viewer = new Viewer('cesiumContainer', {
 });
 
 // Enable global imagery and terrain
-viewer.scene.globe.show = false;
+viewer.scene.globe.show = true;
 viewer.scene.skyBox.show = false;
 viewer.scene.skyAtmosphere.show = false;
 
 // const tileset = viewer.scene.primitives.add(
-//   await Cesium3DTileset.fromIonAssetId(2951277),
+//   await Cesium3DTileset.fromIonAssetId(2951670),
 // );
 
 // Create the tileset, and set its model matrix to move it
 // to a certain position on the globe
-const tileset = viewer.scene.primitives.add(
-  await Cesium3DTileset.fromUrl(
-    "http://172.31.11.155:8080/tileset.json",
-    {
-      debugShowBoundingVolume: false,
-    }
-  )
-);
+// const tileset = viewer.scene.primitives.add(
+//   await Cesium3DTileset.fromUrl(
+//     "http://172.31.11.155:8080/tileset.json",
+//     {
+//       debugShowBoundingVolume: false,
+//     }
+//   )
+// );
 
-tileset.modelMatrix = Transforms.eastNorthUpToFixedFrame(
-  Cartesian3.fromDegrees(-75.152325, 39.94704, 0.0)
-);
+// tileset.modelMatrix = Transforms.eastNorthUpToFixedFrame(
+//   Cartesian3.fromDegrees(-75.152325, 39.94704, 0.0)
+// );
 
-viewer.scene.globe.cullWithChildren = true;
-console.log(tileset.featureIdLabel); // Verify the feature ID label
-console.log(tileset.metadata);
+// viewer.scene.globe.cullWithChildren = true;
+// console.log(tileset.featureIdLabel); // Verify the feature ID label
+// console.log(tileset.metadata);
 
 // Add ambient occlusion if supported
 if (PostProcessStageLibrary.isAmbientOcclusionSupported(viewer.scene)) {
@@ -52,6 +52,70 @@ if (PostProcessStageLibrary.isAmbientOcclusionSupported(viewer.scene)) {
   ambientOcclusion.uniforms.lengthCap = 0.5;
   ambientOcclusion.uniforms.directionCount = 16;
   ambientOcclusion.uniforms.stepCount = 32;
+}
+
+// Create a container for the toggle buttons in the top-left corner
+const toggleContainer = document.createElement('div');
+toggleContainer.style.position = 'absolute';
+toggleContainer.style.top = '10px';
+toggleContainer.style.left = '10px';
+toggleContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+toggleContainer.style.padding = '10px';
+toggleContainer.style.borderRadius = '5px';
+toggleContainer.style.color = 'white';
+toggleContainer.style.zIndex = '1000';
+toggleContainer.style.fontFamily = 'Arial, sans-serif';
+document.body.appendChild(toggleContainer);
+
+// Add a title to the toggle container
+// const toggleTitle = document.createElement('div');
+// toggleTitle.textContent = 'Toggle Layers';
+// toggleTitle.style.fontWeight = 'bold';
+// toggleTitle.style.marginBottom = '10px';
+// toggleContainer.appendChild(toggleTitle);
+
+// The Architectural Design is comprised of multiple tilesets
+const tilesetData = [
+  { title: "Architecture", assetId: 2951277, visible: true },
+  { title: "Facade", assetId: 2951864, visible: true },
+  { title: "Structural", assetId: 2951909, visible: false },
+  { title: "Electrical", assetId: 2951909, visible: true },
+  { title: "HVAC", assetId: 2887126, visible: true },
+  { title: "Plumbing", assetId: 2887127, visible: true },
+  { title: "Site", assetId: 2951670, visible: true },
+];
+
+// Map to hold references to the tilesets
+const tilesetMap = new Map();
+
+// Load each tileset and create a corresponding visibility toggle button
+for (const { title, assetId, visible } of tilesetData) {
+  try {
+    const tileset = await Cesium3DTileset.fromIonAssetId(assetId);
+    viewer.scene.primitives.add(tileset);
+    tileset.show = visible;
+    tilesetMap.set(title, tileset);
+
+    // Create a checkbox for toggling visibility
+    const label = document.createElement('label');
+    label.style.display = 'flex';
+    label.style.alignItems = 'center';
+    label.style.marginBottom = '5px';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = visible;
+    checkbox.style.marginRight = '5px';
+    checkbox.addEventListener('change', () => {
+      tileset.show = checkbox.checked;
+    });
+
+    label.appendChild(checkbox);
+    label.appendChild(document.createTextNode(title));
+    toggleContainer.appendChild(label);
+  } catch (error) {
+    console.log(`Error loading tileset (${title}): ${error}`);
+  }
 }
 
 // Highlighting and metadata picking logic
@@ -79,6 +143,7 @@ viewer.screenSpaceEventHandler.setInputAction(function onMouseMove(movement) {
     Color.clone(pickedFeature.color, highlighted.originalColor);
     pickedFeature.color = Color.YELLOW;
   }
+  
 }, ScreenSpaceEventType.MOUSE_MOVE);
 
 viewer.screenSpaceEventHandler.setInputAction(function onLeftClick(movement) {
@@ -121,9 +186,23 @@ viewer.screenSpaceEventHandler.setInputAction(function onLeftClick(movement) {
   }
 }, ScreenSpaceEventType.LEFT_CLICK);
 
-const offset = new HeadingPitchRange(
-  Math.toRadians(-45.0),
-  Math.toRadians(-45.0),
-  80.0
-);
-viewer.zoomTo(tileset, offset);
+// const offset = new HeadingPitchRange(
+//   Math.toRadians(-45.0),
+//   Math.toRadians(-45.0),
+//   80.0
+// );
+// viewer.zoomTo(tileset, offset);
+
+// Find and zoom to the "Architecture" tileset
+const architectureTileset = tilesetMap.get("Site"); // Get the tileset by title
+
+if (architectureTileset) {
+  const offset = new HeadingPitchRange(
+    Math.toRadians(-45.0), // Heading
+    Math.toRadians(-45.0), // Pitch
+    80.0 // Range
+  );
+  viewer.zoomTo(architectureTileset, offset);
+} else {
+  console.log("Architecture tileset not found.");
+}
