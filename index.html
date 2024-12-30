@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Cesium App</title>
   <style>
-    /* Make the page and container occupy full screen for a nice UI */
+    /* Fullscreen viewer */
     html, body {
       height: 100%;
       margin: 0;
@@ -29,23 +29,26 @@
       border-radius: 5px;
       font-family: Arial, sans-serif;
       z-index: 1000;
+      width: 150px;
     }
 
-    #toolbar .cesium-button {
-      display: block;
-      width: 100%;
-      text-align: left;
-      padding: 5px;
-      margin-bottom: 5px;
+    #toolbar label {
+      display: flex;
+      align-items: center;
       background-color: rgba(50, 50, 50, 0.8);
-      color: white;
-      border: none;
-      border-radius: 3px;
+      margin-bottom: 5px;
+      padding: 5px;
+      border-radius: 5px;
       cursor: pointer;
+      font-size: 14px;
     }
 
-    #toolbar .cesium-button:hover {
+    #toolbar label:hover {
       background-color: rgba(70, 70, 70, 0.8);
+    }
+
+    #toolbar input[type="checkbox"] {
+      margin-right: 8px;
     }
   </style>
 </head>

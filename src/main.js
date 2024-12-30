@@ -55,17 +55,17 @@ if (PostProcessStageLibrary.isAmbientOcclusionSupported(viewer.scene)) {
 }
 
 // Create a container for the toggle buttons in the top-left corner
-const toggleContainer = document.createElement('div');
-toggleContainer.style.position = 'absolute';
-toggleContainer.style.top = '10px';
-toggleContainer.style.left = '10px';
-toggleContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-toggleContainer.style.padding = '10px';
-toggleContainer.style.borderRadius = '5px';
-toggleContainer.style.color = 'white';
-toggleContainer.style.zIndex = '1000';
-toggleContainer.style.fontFamily = 'Arial, sans-serif';
-document.body.appendChild(toggleContainer);
+// const toggleContainer = document.createElement('div');
+// toggleContainer.style.position = 'absolute';
+// toggleContainer.style.top = '10px';
+// toggleContainer.style.left = '10px';
+// toggleContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+// toggleContainer.style.padding = '10px';
+// toggleContainer.style.borderRadius = '5px';
+// toggleContainer.style.color = 'white';
+// toggleContainer.style.zIndex = '1000';
+// toggleContainer.style.fontFamily = 'Arial, sans-serif';
+// document.body.appendChild(toggleContainer);
 
 // Add a title to the toggle container
 // const toggleTitle = document.createElement('div');
@@ -74,12 +74,15 @@ document.body.appendChild(toggleContainer);
 // toggleTitle.style.marginBottom = '10px';
 // toggleContainer.appendChild(toggleTitle);
 
+// Access the toolbar container
+const toolbar = document.getElementById("toolbar");
+
 // The Architectural Design is comprised of multiple tilesets
 const tilesetData = [
   { title: "Architecture", assetId: 2951277, visible: true },
   { title: "Facade", assetId: 2951864, visible: true },
   { title: "Structural", assetId: 2951909, visible: false },
-  { title: "Electrical", assetId: 2951909, visible: true },
+  { title: "Electrical", assetId: 295199, visible: true },
   { title: "HVAC", assetId: 2887126, visible: true },
   { title: "Plumbing", assetId: 2887127, visible: true },
   { title: "Site", assetId: 2951670, visible: true },
@@ -88,7 +91,7 @@ const tilesetData = [
 // Map to hold references to the tilesets
 const tilesetMap = new Map();
 
-// Load each tileset and create a corresponding visibility toggle button
+// Load each tileset and create a corresponding toggle button
 for (const { title, assetId, visible } of tilesetData) {
   try {
     const tileset = await Cesium3DTileset.fromIonAssetId(assetId);
@@ -96,23 +99,19 @@ for (const { title, assetId, visible } of tilesetData) {
     tileset.show = visible;
     tilesetMap.set(title, tileset);
 
-    // Create a checkbox for toggling visibility
-    const label = document.createElement('label');
-    label.style.display = 'flex';
-    label.style.alignItems = 'center';
-    label.style.marginBottom = '5px';
+    // Create a label with a checkbox
+    const label = document.createElement("label");
+    label.textContent = title;
 
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
     checkbox.checked = visible;
-    checkbox.style.marginRight = '5px';
-    checkbox.addEventListener('change', () => {
+    checkbox.addEventListener("change", () => {
       tileset.show = checkbox.checked;
     });
 
-    label.appendChild(checkbox);
-    label.appendChild(document.createTextNode(title));
-    toggleContainer.appendChild(label);
+    label.prepend(checkbox); // Add the checkbox before the title
+    toolbar.appendChild(label);
   } catch (error) {
     console.log(`Error loading tileset (${title}): ${error}`);
   }
